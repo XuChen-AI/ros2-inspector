@@ -53,9 +53,7 @@
 ```
 （仓库根 = test/）
 ├── pyproject.toml        # uv 管理，依赖 mcp[cli]>=1.10,<2
-├── start_ros2_mcp.sh     # 启动脚本兜底（不 source ROS；标准配置用 uv run --directory）
 ├── README.md / README.zh-CN.md
-├── audit.log             # 运行时生成的审计日志（已 gitignore）
 ├── tests/
 │   ├── fence_tests.py    # 安全围栏单元测试（无需 ROS）
 │   ├── client_smoke.py   # 真实 MCP 客户端端到端冒烟
@@ -116,14 +114,21 @@ Claude Desktop / Qoder 填同样的 JSON（位置见 README）。
 5. uv publish                   # 推到 PyPI（需要凭据，见下方前提清单）
 ```
 
-**发版前提清单**（推 PyPI 前逐项确认）：
+**发版前提清单**（2026-09-29 全部完成，v0.1.0 与 v0.1.1 已上架）：
 
-- [x] 包名查重：`ros2-inspector` 在 PyPI 可用（2026-09-29 经 simple index 确认 404；注意 curl 直连 PyPI 网页会撞反爬验证页，勿被 HTTP 200 误导，用 `/pypi/<name>/json` 或 `/simple/<name>/` 判定）
-- [ ] pypi.org 注册账号（用户名注册后不可改）
-- [ ] 账号设置里生成 API token（scope 选 whole account 或指定 project）
-- [ ] `uv publish` 时提供 token（`UV_PUBLISH_TOKEN` 环境变量或命令行提示输入）
+- [x] 包名：**最终发行名 `ros2-inspector-mcp`**。教训：`ros2-inspector` 本身虽未被占（simple index 404），但上传时被 PyPI **名称相似性拦截**（400 "too similar to an existing project"）——simple index 查重只能查"完全同名"，防不住相似性策略；选定新名后直接重试即可，无损失
+- [x] pypi.org 注册账号（用户名注册后不可改）
+- [x] 账号设置里生成 API token（scope 选 Entire account——首次创建新包必须）
+- [x] `uv publish --token <token>` 上传成功（token 仅作命令行参数，不落盘；发布后已建议用户在网站撤销轮换）
 - [ ] （可选）配置 GitHub Actions Trusted Publishing，之后打 tag 自动发布、无需本地 token
-- [ ] 发布后在 README 补"Install from PyPI"章节（`uvx ros2-inspector` 配置置顶）
+- [x] 发布后 README 补"Install from PyPI"章节（`uvx ros2-inspector-mcp` 配置置顶）
+
+**发布实录**（2026-09-29）：
+
+- v0.1.0：首次上传被名称相似性拦截 → 改名 `ros2-inspector-mcp` 后成功上架
+- v0.1.1（当天）：发现 `uvx ros2-inspector-mcp` 默认找同名可执行文件而我们的命令叫 `ros2-inspector` → 加同名可执行别名（两个入口共存）→ 完整走了一遍"uv version → CHANGELOG → build → publish"迭代流程
+- 发布后三重验证通过：干净目录 `uvx ros2-inspector-mcp --version` → 0.1.1；`--from` 方式同样 0.1.1；仓库 grep 无 token 痕迹
+- 经验：PyPI simple index 走 CDN，刚发布的版本可能延迟几分钟才对解析器可见（JSON API 先更新）；本机 uvx 缓存可用 `uvx --reinstall <pkg>` 强制重新解析
 
 **已验证的本地打包状态**（0.1.0，2026-09-29）：
 
@@ -133,7 +138,7 @@ Claude Desktop / Qoder 填同样的 JSON（位置见 README）。
 - `uv tool install/uninstall` 三件套：安装→`--version`→卸载无残留
 - 环境零污染复核：系统 pip 用户包前后 0 变化；依赖仅在项目 .venv 与 uv 缓存
 
-**升级语义**（发布后自动成立，无需额外开发）：uvx 用户下次启动自动解析新版（可 `ros2-inspector==0.x.0` 钉版本）；tool 用户 `uv tool upgrade ros2-inspector`；pip 用户 `pip install -U`；MCP 配置文件全程不用改。
+**升级语义**（已发布，自动成立）：uvx 用户下次启动自动解析新版（可 `ros2-inspector-mcp@0.x.y` 钉版本）；tool 用户 `uv tool upgrade ros2-inspector-mcp`；pip 用户 `pip install -U ros2-inspector-mcp`；MCP 配置文件全程不用改。
 
 ## 十、物理边界（诚实声明）
 

@@ -1,13 +1,13 @@
 [project]
-name = "ros2-inspector"
-version = "0.1.0"
+name = "ros2-inspector-mcp"
+version = "0.1.1"
 description = "Read-only MCP server that lets LLMs inspect and analyze ROS 2 systems (nodes, topics, params, actions) via natural language"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
-    { name = "XuChen", email = "2637763867@qq.com" },
+    { name = "XuChen" },
 ]
 keywords = [
     "ros2", "ros", "mcp", "model-context-protocol", "llm",
@@ -39,6 +39,7 @@ Issues = "https://github.com/XuChen-AI/ros2-inspector/issues"
 
 [project.scripts]
 ros2-inspector = "ros2_inspector.server:main"
+ros2-inspector-mcp = "ros2_inspector.server:main"
 
 [build-system]
 requires = ["hatchling"]

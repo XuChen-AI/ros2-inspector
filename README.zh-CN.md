@@ -79,14 +79,36 @@ ros2-inspector 把这整件事交给大模型：**你说一句"分析一下当�
 
 **前置**：[uv](https://docs.astral.sh/uv/)（唯一必需）；本机有 ROS2 则查看类工具可用，没有也不影响启动。
 
-**1. 安装**
+**1. 配置宿主** —— MCP 通用 JSON：
 
-```bash
-cd ros2-inspector
-uv sync
+```json
+{
+  "mcpServers": {
+    "ros2-inspector": {
+      "command": "uvx",
+      "args": ["ros2-inspector-mcp"]
+    }
+  }
+}
 ```
 
-**2. 配置宿主**（MCP 配置通用 JSON，`--directory` 后面改成你的项目路径）：
+无需安装步骤、无本地路径依赖：`uvx` 首次运行会自动从 [PyPI](https://pypi.org/project/ros2-inspector-mcp/) 拉取。需要可复现环境时钉版本：`"args": ["ros2-inspector-mcp@0.1.1"]`。
+
+**也可装成常驻工具（可选）：**
+
+```bash
+uv tool install ros2-inspector-mcp   # 安装
+ros2-inspector-mcp --version         # 查看版本
+uv tool upgrade ros2-inspector-mcp   # 升级
+uv tool uninstall ros2-inspector-mcp # 卸载
+```
+
+**从源码运行（开发模式）：**
+
+```bash
+git clone https://github.com/XuChen-AI/ros2-inspector.git
+cd ros2-inspector && uv sync
+```
 
 ```json
 {
@@ -99,8 +121,7 @@ uv sync
 }
 ```
 
-> 发布 PyPI 之后会简化为 `"command": "uvx", "args": ["ros2-inspector"]`——路径无关，见 Roadmap。
-> 若宿主找不到 `uv`（PATH 受限的图形应用），可改用 uv 的绝对路径，或使用仓库里的 `start_ros2_mcp.sh` 启动脚本兜底。
+> 若宿主找不到 `uv`/`uvx`（PATH 受限的图形应用），把 `command` 改成绝对路径（如 `/home/你/.local/bin/uvx`）即可。
 
 | 宿主 | 配置位置 |
 |------|---------|
@@ -108,7 +129,7 @@ uv sync
 | Claude Desktop | `claude_desktop_config.json` 的 `mcpServers` |
 | Qoder / Cursor | 设置 → MCP → 添加服务器，粘贴同样的 JSON |
 
-**3. 开始提问**
+**2. 开始提问**
 
 > "分析一下当前系统的运行状态" · "看看现在有哪些节点" · "/chatter 上数据长什么样" · "环境健康吗？"
 
@@ -161,7 +182,8 @@ uv sync
 ## 🗺 Roadmap
 
 - [ ] v1.5：Prompts 诊断模板（一键系统体检）；`service list/type` 只读查询
-- [ ] v2：PyPI 发布（`uvx ros2-inspector` 一条命令可用）；Docker 封装（宿主机零依赖）
+- [x] v2：PyPI 发布 —— `uvx ros2-inspector-mcp` 路径无关一条命令可用
+- [ ] v2：Docker 封装（宿主机零依赖）
 
 ---
 

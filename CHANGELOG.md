@@ -7,6 +7,16 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-29
+
+### Added
+
+- 可执行文件别名 `ros2-inspector-mcp`：`uvx ros2-inspector-mcp` 可直接运行（原命令 `ros2-inspector` 继续可用）。
+
+### Changed
+
+- PyPI 发行名定为 `ros2-inspector-mcp`（原名 `ros2-inspector` 触发 PyPI 名称相似性拦截，无法注册）。
+
 ## [0.1.0] - 2026-09-29
 
 ### Added
@@ -27,5 +37,6 @@
 - `--version` 命令行参数。
 - 中英双语 README、MIT License、uv 项目配置。
 
-[Unreleased]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/XuChen-AI/ros2-inspector/releases/tag/v0.1.0

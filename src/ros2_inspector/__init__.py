@@ -7,6 +7,6 @@ Server 本体零 ROS 依赖：不 import 任何 ROS 库；ROS 环境由 runner �
 from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
 try:
-    __version__ = _pkg_version("ros2-inspector")
+    __version__ = _pkg_version("ros2-inspector-mcp")
 except PackageNotFoundError:  # 源码目录直接运行、未安装的场景
     __version__ = "0.0.0.dev0"

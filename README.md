@@ -79,14 +79,36 @@ The guarantees that make this safe to actually run:
 
 **Prerequisites**: [uv](https://docs.astral.sh/uv/) — the only requirement. With ROS 2 on the machine the inspection tools work; without it the server still starts fine.
 
-**1. Install**
+**1. Configure your host** — universal MCP JSON:
 
-```bash
-cd ros2-inspector
-uv sync
+```json
+{
+  "mcpServers": {
+    "ros2-inspector": {
+      "command": "uvx",
+      "args": ["ros2-inspector-mcp"]
+    }
+  }
+}
 ```
 
-**2. Configure your host** (universal MCP JSON; adjust the `--directory` path to your checkout):
+No install step, no local paths: `uvx` pulls the package from [PyPI](https://pypi.org/project/ros2-inspector-mcp/) on first run. Pin a version with `"args": ["ros2-inspector-mcp@0.1.1"]` if you need reproducibility.
+
+**Install as a persistent tool instead (optional):**
+
+```bash
+uv tool install ros2-inspector-mcp   # install
+ros2-inspector-mcp --version         # check version
+uv tool upgrade ros2-inspector-mcp   # upgrade
+uv tool uninstall ros2-inspector-mcp # uninstall
+```
+
+**From source (development):**
+
+```bash
+git clone https://github.com/XuChen-AI/ros2-inspector.git
+cd ros2-inspector && uv sync
+```
 
 ```json
 {
@@ -99,8 +121,7 @@ uv sync
 }
 ```
 
-> Once published to PyPI this simplifies to `"command": "uvx", "args": ["ros2-inspector"]` — path-independent; see the Roadmap.
-> If your host cannot find `uv` (GUI apps with a restricted PATH), use the absolute path to the uv binary, or the bundled `start_ros2_mcp.sh` wrapper as a fallback.
+> If your host cannot find `uv`/`uvx` (GUI apps with a restricted PATH), use the absolute path to the uv binary (e.g. `/home/you/.local/bin/uvx`) in the `command` field.
 
 | Host | Where to put it |
 |------|----------------|
@@ -108,7 +129,7 @@ uv sync
 | Claude Desktop | the `mcpServers` block of `claude_desktop_config.json` |
 | Qoder / Cursor | Settings → MCP → add server, paste the same JSON |
 
-**3. Ask away**
+**2. Ask away**
 
 > "Analyze the current system state" · "Which nodes are running?" · "What does the data on /chatter look like?" · "Is the environment healthy?"
 
@@ -161,7 +182,8 @@ Read-only is designed, not promised. Four defense layers, centralized in the sin
 ## 🗺 Roadmap
 
 - [ ] v1.5: diagnostic Prompt templates (one-click system checkup); read-only `service list/type`
-- [ ] v2: PyPI release (`uvx ros2-inspector`, path-independent); Docker packaging (zero host dependencies)
+- [x] v2: PyPI release — `uvx ros2-inspector-mcp`, path-independent
+- [ ] v2: Docker packaging (zero host dependencies)
 
 ---
 

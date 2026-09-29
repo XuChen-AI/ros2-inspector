@@ -1,43 +1,42 @@
-# ros2-inspector v0.1.0 本地打包准备计划（不推远端）
+# ros2-inspector v0.1.0 发布 PyPI 计划（定稿）
 
-## 范围（按用户指示）
+## 第 0 步：作者信息修正（本轮新确认）
 
-**不做**：`uv publish`、PyPI 注册/token 等一切远端操作。将来想发时一条命令，前提清单写进文档备查。
-**做**：本地备好一切可发布产物，wheel 经"陌生用户视角"完整验证。
+- pyproject.toml 的 authors 去掉邮箱，只留 `{ name = "XuChen" }`（避免 QQ 邮箱公开展示在 PyPI 页面；email 是可选字段）
+- `uv build` 重建 dist/（版本仍 0.1.0，尚未上传过所以可以覆盖重建）
+- 快速复核：wheel 元数据里 Author 显示 XuChen、无 Author-email
 
-**可改性说明**：本次填写的作者名/邮箱/LICENSE 版权行/GitHub URL 均可日后随时修改（纯元数据，每版可换）；唯一不可逆的是 PyPI 包名与账号名，本次均不涉及。
+## 你在网站上做的（约 3 分钟）
 
-**环境影响承诺**：有下载（构建后端 + 缓存复用）、无编译（纯 Python wheel）、零污染（.venv / ~/.cache/uv / uv tools 三重隔离，不碰系统 Python、pip、ROS）；结束时复核系统 pip 列表前后无变化。
+1. 登录 pypi.org，确认邮箱已验证（Account settings；未验证先点邮件；若要求 2FA 按提示设置）
+2. Account settings → **API tokens** → **Add API token**：名字随意；Scope 选 **Entire account**（首次创建新包必须）
+3. 复制 `pypi-` 开头的完整字符串（只显示一次），粘贴到对话给我
+4. （发布完成后建议回网站撤销该 token——对话内容有留存）
 
-## 实施步骤
+## 我在本地做的
 
-### ① `--version` 支持（~10 行）
-- `server.py` 的 `main()` 加 argparse：`--version` 打印版本退出；无参数照常 stdio 模式。
-- 版本单一来源 = pyproject；运行时 `importlib.metadata.version("ros2-inspector")` 读取，`__init__.py` 删除手工 `__version__`（兜底 `0.0.0.dev0`）。
+1. 发布前最后查重包名（simple index 应 404）
+2. `uv publish --token <token>` 上传 dist/（token 仅作命令行参数，不落盘不进文件）
+3. 发布后三重验证：干净目录 `uvx ros2-inspector --version` → 0.1.0；PyPI 项目页可访问/README 渲染/MIT/作者正确；grep 全仓库无 token 痕迹
+4. 文档收尾：README 中英加 **Install from PyPI**（uvx 配置置顶）；`_plans` 发布前提清单勾选
+5. git 本地提交（含上轮清理改动 + 元数据修正 + 本轮文档更新；**不推远程**）
 
-### ② 元数据补全
-- pyproject：`authors`（取 `git config user.name/email`）、`license = "MIT"`、`license-files`、`keywords`、`classifiers`、`urls`（取 `git remote -v`，无远程则占位并提醒）。
-- 新增 `LICENSE`（MIT 全文）与 `CHANGELOG.md`（Keep a Changelog 格式，0.1.0 首发内容）。
+## Token 验证机制备忘
 
-### ③ 包名查重（只读）
-- 检查 `pypi.org/project/ros2-inspector`：404 = 可用；被占则报告并商议换名。
-
-### ④ 构建与本地验证（核心）
-- `uv build` → `dist/`（wheel + sdist）。
-- 陌生视角验证：`uvx --from ./dist/<wheel> ros2-inspector --version`；同方式起 MCP 服务跑最小冒烟（13 工具）。
-- 工具三件套验证：`uv tool install --from ./dist/<wheel>` → `--version` → `uninstall`（确认卸载无残留）。
-- 环境复核：前后对比系统 pip 用户包列表。
-
-### ⑤ 版本管理落地 + 文档同步
-- git：add + commit "v0.1.0" + 本地 tag `v0.1.0`（不推远程）。
-- README 中英双份：License 章节与徽章 TODO → MIT；不加"从 PyPI 安装"节（未发布，发布时再加）。
-- `_plans` 开发计划补"发版流程约定"与"发布前提清单"（PyPI 账号、API token、查重结论）。
+- 服务器生成（你账号里存哈希）+ 本地零预存（字符串即凭证）；`uv publish --token` 塞进请求头，服务器比对哈希定位账号再授权上传
+- 作者信息（pyproject authors）是纯展示元数据，不参与验证，与 PyPI 账号无需一致；来源是本机 `~/.gitconfig`（git config user.name/email），非编造
+- 持 token 者即身份——不进文件不进仓库即无泄漏面
 
 ## 验收标准
-- 本地与 wheel 两种方式 `--version` 均输出 0.1.0
-- wheel 在陌生目录以 uvx --from 起服务，13 工具冒烟通过
-- `uv tool install/uninstall` 全流程干净
-- LICENSE/CHANGELOG/元数据齐全，构建无错误
-- git commit + tag v0.1.0 完成
-- 系统 pip 前后对比无变化
-- 文档中"将来发布要做什么"一目了然
+
+- wheel 元数据：Author=XuChen，无 email
+- PyPI 项目页存在：ros2-inspector 0.1.0，MIT，README 渲染正常
+- 干净目录 `uvx ros2-inspector --version` 输出 0.1.0
+- 仓库 grep 无 token 字样
+- 本地 git 提交完成（不推送）
+
+## 风险与备注
+
+- 同一版本号只能上传一次（0.1.0 推上去后改动需发 0.1.1+）
+- 上传中断重跑 `uv publish` 即可；报 "file already exists" = 其实已成功
+- 网站界面若改版找不到 "Entire account"，选允许创建新项目的最大权限项
