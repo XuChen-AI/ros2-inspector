@@ -3,7 +3,7 @@
 只读 ROS2 系统巡检 MCP Server——让大模型通过 MCP 自动查看 ROS2 系统（节点/话题/参数/动作/频率/健康状态），免除命令记忆负担，多条命令的"协调分析"交给模型组合完成。
 
 > 状态：**v1 已完成并通过端到端验证**（2026-09-29）
-> 位置：`test/ros2-inspector/`
+> 位置：`test/`（仓库根即项目根，结构已拍平）
 
 ---
 
@@ -51,11 +51,11 @@
 ## 五、项目结构
 
 ```
-ros2-inspector/
+（仓库根 = test/）
 ├── pyproject.toml        # uv 管理，依赖 mcp[cli]>=1.10,<2
-├── start_ros2_mcp.sh     # 启动脚本（不 source ROS，宿主配置指向它）
-├── README.md             # 安装 / 三宿主配置 / 工具表 / 原语选择说明 / 故障排查
-├── audit.log             # 运行时生成的审计日志
+├── start_ros2_mcp.sh     # 启动脚本兜底（不 source ROS；标准配置用 uv run --directory）
+├── README.md / README.zh-CN.md
+├── audit.log             # 运行时生成的审计日志（已 gitignore）
 ├── tests/
 │   ├── fence_tests.py    # 安全围栏单元测试（无需 ROS）
 │   ├── client_smoke.py   # 真实 MCP 客户端端到端冒烟
@@ -81,14 +81,14 @@ ros2-inspector/
 
 ## 七、宿主接入
 
-工作区已放置 `test/.mcp.json`（ZCode / Claude Code 通用格式）：
+工作区已放置 `test/.mcp.json`（ZCode / Claude Code 通用格式，标准 uv 形式）：
 
 ```json
 {
   "mcpServers": {
     "ros2-inspector": {
-      "command": "bash",
-      "args": ["/home/xuchen/XuChenCode/test/ros2-inspector/start_ros2_mcp.sh"]
+      "command": "uv",
+      "args": ["run", "--directory", "/home/xuchen/XuChenCode/test", "ros2-inspector"]
     }
   }
 }

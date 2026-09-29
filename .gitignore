@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.egg-info/
+dist/
+.venv/
+
+# 运行时产物
+audit.log
+
+# 工具/编辑器
+.zcode/
+.claude/
