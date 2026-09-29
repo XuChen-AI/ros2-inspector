@@ -2,6 +2,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+[![PyPI](https://img.shields.io/pypi/v/ros2-inspector-mcp)](https://pypi.org/project/ros2-inspector-mcp/)
 ![ROS2](https://img.shields.io/badge/ROS2-Inspectable-green)
 ![Read-only](https://img.shields.io/badge/read--only-no%20side%20effects-blue)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)

@@ -10,3 +10,9 @@ audit.log
 # 工具/编辑器
 .zcode/
 .claude/
+
+# 本地会话/个人工作目录（不公开）
+_claude/
+_plans/
+_spec/
+_temp/
