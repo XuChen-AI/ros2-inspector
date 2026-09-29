@@ -6,7 +6,7 @@
 ![只读](https://img.shields.io/badge/只读-无副作用-blue)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![MCP](https://img.shields.io/badge/MCP-stdio-purple)
-![License](https://img.shields.io/badge/license-TBD-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 **ros2-inspector 让大模型自动分析你的 ROS2 系统运行状态。** 它是一个 MCP Server：你用自然语言问"系统现在怎么样"，大模型自动决定执行哪些 ros2 查看命令、按什么顺序查、怎么把多个命令的输出拼成完整的分析结论。
 
@@ -173,4 +173,4 @@ uv sync
 
 ## 📜 License
 
-📌 *TODO：待定（建议 Apache-2.0 或 MIT，与 ROS 生态常见选择一致）*
+[MIT](LICENSE) — Copyright (c) 2026 XuChen

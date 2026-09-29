@@ -1,12 +1,41 @@
 [project]
 name = "ros2-inspector"
 version = "0.1.0"
-description = "只读 ROS2 系统巡检 MCP Server：让大模型通过 MCP 查看 ROS2 节点/话题/参数/动作"
+description = "Read-only MCP server that lets LLMs inspect and analyze ROS 2 systems (nodes, topics, params, actions) via natural language"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "XuChen", email = "2637763867@qq.com" },
+]
+keywords = [
+    "ros2", "ros", "mcp", "model-context-protocol", "llm",
+    "robotics", "inspection", "diagnostics", "agent-tools",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: System :: Monitoring",
+]
 dependencies = [
     "mcp[cli]>=1.10.0,<2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/XuChen-AI/ros2-inspector"
+Repository = "https://github.com/XuChen-AI/ros2-inspector"
+Changelog = "https://github.com/XuChen-AI/ros2-inspector/blob/main/CHANGELOG.md"
+Issues = "https://github.com/XuChen-AI/ros2-inspector/issues"
 
 [project.scripts]
 ros2-inspector = "ros2_inspector.server:main"

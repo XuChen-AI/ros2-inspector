@@ -6,7 +6,7 @@
 ![Read-only](https://img.shields.io/badge/read--only-no%20side%20effects-blue)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![MCP](https://img.shields.io/badge/MCP-stdio-purple)
-![License](https://img.shields.io/badge/license-TBD-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 **ros2-inspector lets an LLM automatically analyze the runtime state of your ROS 2 system.** It is an MCP server: ask "how is the system doing?" in natural language, and the model decides which ros2 inspection commands to run, in what order, and how to combine their outputs into a complete analysis.
 
@@ -173,4 +173,4 @@ Issues and PRs are welcome: new tool suggestions (read-only only), host-configur
 
 ## 📜 License
 
-📌 *TODO: TBD (Apache-2.0 or MIT suggested, consistent with common choices in the ROS ecosystem)*
+[MIT](LICENSE) — Copyright (c) 2026 XuChen

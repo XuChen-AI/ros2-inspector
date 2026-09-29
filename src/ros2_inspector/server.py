@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
+
 from mcp.server.fastmcp import FastMCP
 
+from . import __version__
 from .tools import (
     actions,
     health,
@@ -32,6 +35,12 @@ for _module in (rosenv, overview, nodes, topics, params, actions, interfaces, he
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="ros2-inspector",
+        description="只读 ROS2 系统巡检 MCP Server（stdio 传输）",
+    )
+    parser.add_argument("--version", action="version", version=__version__)
+    parser.parse_args()
     mcp.run(transport="stdio")
 
 

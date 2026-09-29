@@ -101,9 +101,40 @@ Claude Desktop / Qoder 填同样的 JSON（位置见 README）。
 | 阶段 | 内容 |
 |------|------|
 | v1.5 | Prompts 诊断模板（`diagnose_system` 等一键体检）；`service list/type` 只读查询；overview 连接关系图优化 |
-| v2 | Docker 封装（镜像内含 ROS CLI，宿主机零依赖；需 `--net=host`）；PyPI 发布（`uvx ros2-inspector` 一条命令可用） |
+| v2 | PyPI 发布（`uvx ros2-inspector` 一条命令可用；本地打包已于 2026-09-29 完成验证）；Docker 封装（镜像内含 ROS CLI，宿主机零依赖；需 `--net=host`） |
 | 可选 | 话题采样结构化解析（按消息类型 JSON 化）；多发行版优先级配置；参数写入等控制类工具（需显式授权开关，默认关闭） |
 
-## 九、物理边界（诚实声明）
+## 九、发版流程约定（2026-09-29 打包准备时确立）
+
+**每次发版五步**（版本单一来源 = pyproject，运行时经 importlib.metadata 读取）：
+
+```
+1. uv version 0.x.0            # 改版本号（同步 pyproject + uv.lock）
+2. 更新 CHANGELOG.md            # 新版本改了什么（Keep a Changelog 格式）
+3. git commit + git tag v0.x.0  # 提交并打 tag
+4. uv build                     # 产出 dist/ 下 wheel + sdist
+5. uv publish                   # 推到 PyPI（需要凭据，见下方前提清单）
+```
+
+**发版前提清单**（推 PyPI 前逐项确认）：
+
+- [x] 包名查重：`ros2-inspector` 在 PyPI 可用（2026-09-29 经 simple index 确认 404；注意 curl 直连 PyPI 网页会撞反爬验证页，勿被 HTTP 200 误导，用 `/pypi/<name>/json` 或 `/simple/<name>/` 判定）
+- [ ] pypi.org 注册账号（用户名注册后不可改）
+- [ ] 账号设置里生成 API token（scope 选 whole account 或指定 project）
+- [ ] `uv publish` 时提供 token（`UV_PUBLISH_TOKEN` 环境变量或命令行提示输入）
+- [ ] （可选）配置 GitHub Actions Trusted Publishing，之后打 tag 自动发布、无需本地 token
+- [ ] 发布后在 README 补"Install from PyPI"章节（`uvx ros2-inspector` 配置置顶）
+
+**已验证的本地打包状态**（0.1.0，2026-09-29）：
+
+- `uv run ros2-inspector --version` → 0.1.0（元数据读取正常）
+- `uv build` → `dist/ros2_inspector-0.1.0-py3-none-any.whl`（纯 Python 通用 wheel）+ sdist
+- 陌生目录 `uvx --from <wheel>` 启动 MCP 服务：13 工具注册正常
+- `uv tool install/uninstall` 三件套：安装→`--version`→卸载无残留
+- 环境零污染复核：系统 pip 用户包前后 0 变化；依赖仅在项目 .venv 与 uv 缓存
+
+**升级语义**（发布后自动成立，无需额外开发）：uvx 用户下次启动自动解析新版（可 `ros2-inspector==0.x.0` 钉版本）；tool 用户 `uv tool upgrade ros2-inspector`；pip 用户 `pip install -U`；MCP 配置文件全程不用改。
+
+## 十、物理边界（诚实声明）
 
 查 ROS 网络的工具在未安装/未运行 ROS 的机器上只能返回"未检测到/无节点"，不可能凭空查出节点——DDS 发现依赖本机或网络可达的 ROS 运行时。这个边界不可封装，只能友好呈现。

@@ -1,70 +1,43 @@
-# ROS2 查看型 MCP Server（ros2-inspector）实施计划
+# ros2-inspector v0.1.0 本地打包准备计划（不推远端）
 
-## 目标
+## 范围（按用户指示）
 
-只读 ROS2 巡检 MCP Server：大模型通过 MCP 查看节点/话题/参数等状态，并能在**未装 ROS 的机器**上检测安装情况与机器适配性。
+**不做**：`uv publish`、PyPI 注册/token 等一切远端操作。将来想发时一条命令，前提清单写进文档备查。
+**做**：本地备好一切可发布产物，wheel 经"陌生用户视角"完整验证。
 
-已确认决策：ros2 CLI 子进程路线；**13 个工具**；本地 uv 跑通；代码全部在 `test/ros2-inspector/`。
+**可改性说明**：本次填写的作者名/邮箱/LICENSE 版权行/GitHub URL 均可日后随时修改（纯元数据，每版可换）；唯一不可逆的是 PyPI 包名与账号名，本次均不涉及。
 
-## 与 ROS 的解耦（本次确认的重点）
-
-- **Server 本体零 ROS 依赖**：纯 Python + FastMCP，不 import 任何 ROS 库；启动脚本不 source ROS，裸机器可直接启动。
-- **运行时自动探测**：首次调用查看类工具时，扫描 `/opt/ros/*/setup.bash`，用一次固定命令（`bash -c "source <setup> && env -0"`，无用户输入、无注入面）提取环境变量，后续所有子进程以 shell=False + 注入 env 执行。
-- **未装 ROS 不崩溃**：探测失败时，查看类工具返回友好结论（"本机未检测到 ROS2"）；两个新工具完全不需要 ROS。
-- **物理边界诚实声明**：查 ROS 网络的工具在没装 ROS 的机器上只能返回"未检测到"，不可能凭空查出节点。
-
-## 安全围栏（四层纵深防御，集中在 runner.py）
-
-1. 工具注册层：只注册 13 个只读函数，pub/call/set/launch 代码不存在
-2. 命令白名单层：ros2 可执行文件由探测产生（仅接受 /opt/ros 下的合法路径）；子命令白名单精确到"动词+子动词"；黑名单令牌（pub/call/set/launch/delete/security…）兜底
-3. 参数校验层：ROS 名称正则；含 `;`、`|`、`&`、反引号、`$` 拒绝；shell=False
-4. 运行时兜底层：超时+进程组强杀；审计日志（时间/参数/耗时/结果）
-
-新工具 machine_readiness / ros_install_info 用纯 Python 标准库实现，**零子进程**，天然安全。
-
-## 协议原语
-
-只做 Tools；不做 Resources（数据实时动态）；Prompts/Skills 留 v1.5（套路先写进 docstring）。
-
-## 工具清单（13 个）
-
-| 工具 | 依赖 ROS？ | 回答什么 |
-|---|---|---|
-| `ros_install_info` | 否（纯 Python） | 本机装没装 ROS？哪个发行版、什么路径？ |
-| `machine_readiness` | 否（纯 Python） | 机器适不适合装/跑 ROS（OS/内存/磁盘/网络对照支持矩阵） |
-| `health_check` | 需要 | ROS 环境本身健康吗（doctor + daemon） |
-| `system_overview` | 需要 | 一页快照：节点+话题+连接关系 |
-| `list_nodes` / `get_node_info` | 需要 | 哪些节点在跑 / 某节点收发什么 |
-| `list_topics` / `get_topic_info` | 需要 | 有哪些话题 / 类型与 QoS |
-| `sample_topic` / `get_topic_rate` | 需要 | 数据内容（限时采样原文）/ 频率 |
-| `actions` / `params` / `show_interface` | 需要 | 动作 / 参数 / 消息接口定义 |
-
-## 项目结构
-
-```
-test/ros2-inspector/
-├── pyproject.toml        # 依赖 mcp[cli]
-├── README.md             # 安装、三宿主 JSON 配置、工具表、故障排查
-├── start_ros2_mcp.sh     # 纯 uv 启动（不碰 ROS 环境）
-├── tests/                # 围栏测试 + MCP 客户端冒烟测试
-└── src/ros2_inspector/
-    ├── server.py         # FastMCP 实例 + 注册工具
-    ├── runner.py         # ROS 探测 + 统一执行器 + 四层围栏 + 审计日志
-    └── tools/            # rosenv/overview/nodes/topics/params/actions/interfaces/health
-```
+**环境影响承诺**：有下载（构建后端 + 缓存复用）、无编译（纯 Python wheel）、零污染（.venv / ~/.cache/uv / uv tools 三重隔离，不碰系统 Python、pip、ROS）；结束时复核系统 pip 列表前后无变化。
 
 ## 实施步骤
 
-1. uv 建骨架，`uv sync` 安装依赖
-2. 实现 runner.py（ROS 探测 + 四层围栏 + 超时强杀 + 审计）
-3. 实现 13 个工具（docstring 五要素：功能/何时用/参数/返回/失败）
-4. 启动脚本 + README + `.mcp.json`
-5. 围栏测试：注入字符、黑名单动词全部拦截
-6. 起 demo talker，真实 MCP 客户端全链路冒烟（列工具→调用→未装 ROS 场景→围栏端到端）
+### ① `--version` 支持（~10 行）
+- `server.py` 的 `main()` 加 argparse：`--version` 打印版本退出；无参数照常 stdio 模式。
+- 版本单一来源 = pyproject；运行时 `importlib.metadata.version("ros2-inspector")` 读取，`__init__.py` 删除手工 `__version__`（兜底 `0.0.0.dev0`）。
+
+### ② 元数据补全
+- pyproject：`authors`（取 `git config user.name/email`）、`license = "MIT"`、`license-files`、`keywords`、`classifiers`、`urls`（取 `git remote -v`，无远程则占位并提醒）。
+- 新增 `LICENSE`（MIT 全文）与 `CHANGELOG.md`（Keep a Changelog 格式，0.1.0 首发内容）。
+
+### ③ 包名查重（只读）
+- 检查 `pypi.org/project/ros2-inspector`：404 = 可用；被占则报告并商议换名。
+
+### ④ 构建与本地验证（核心）
+- `uv build` → `dist/`（wheel + sdist）。
+- 陌生视角验证：`uvx --from ./dist/<wheel> ros2-inspector --version`；同方式起 MCP 服务跑最小冒烟（13 工具）。
+- 工具三件套验证：`uv tool install --from ./dist/<wheel>` → `--version` → `uninstall`（确认卸载无残留）。
+- 环境复核：前后对比系统 pip 用户包列表。
+
+### ⑤ 版本管理落地 + 文档同步
+- git：add + commit "v0.1.0" + 本地 tag `v0.1.0`（不推远程）。
+- README 中英双份：License 章节与徽章 TODO → MIT；不加"从 PyPI 安装"节（未发布，发布时再加）。
+- `_plans` 开发计划补"发版流程约定"与"发布前提清单"（PyPI 账号、API token、查重结论）。
 
 ## 验收标准
-
-- 13 个工具全部正常应答；围栏用例全部拦截
-- 在探测不到 ROS 的场景下返回友好结论不崩溃
-- sample_topic/get_topic_rate 超时返回部分数据不挂起
-- MCP 客户端端到端通过
+- 本地与 wheel 两种方式 `--version` 均输出 0.1.0
+- wheel 在陌生目录以 uvx --from 起服务，13 工具冒烟通过
+- `uv tool install/uninstall` 全流程干净
+- LICENSE/CHANGELOG/元数据齐全，构建无错误
+- git commit + tag v0.1.0 完成
+- 系统 pip 前后对比无变化
+- 文档中"将来发布要做什么"一目了然
