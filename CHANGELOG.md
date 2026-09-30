@@ -5,6 +5,13 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.3.0] - 2026-09-30
+
+### Removed
+
+- 可执行命令别名 `ros2-inspector`：只保留与包同名的 `ros2-inspector-mcp`（v0.1.1 为兼容而保留的双入口正式收敛为一个）。
+  **升级注意**：若你的 MCP 配置用的是 `uv run ... ros2-inspector`（短命令），请改为 `ros2-inspector-mcp`；`uvx ros2-inspector-mcp` 与 `uv tool` 用户不受影响。
+
 ## [0.2.0] - 2026-09-30
 
 ### Added（ssh 远端巡检）
@@ -53,7 +60,8 @@
 - `--version` 命令行参数。
 - 中英双语 README、MIT License、uv 项目配置。
 
-[Unreleased]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/XuChen-AI/ros2-inspector/releases/tag/v0.1.0

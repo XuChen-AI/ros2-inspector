@@ -1,6 +1,6 @@
 [project]
 name = "ros2-inspector-mcp"
-version = "0.2.0"
+version = "0.3.0"
 description = "Read-only MCP server that lets LLMs inspect and analyze ROS 2 systems (nodes, topics, params, actions) via natural language"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -39,7 +39,6 @@ Changelog = "https://github.com/XuChen-AI/ros2-inspector/blob/main/CHANGELOG.md"
 Issues = "https://github.com/XuChen-AI/ros2-inspector/issues"
 
 [project.scripts]
-ros2-inspector = "ros2_inspector.server:main"
 ros2-inspector-mcp = "ros2_inspector.server:main"
 
 [build-system]

@@ -2,7 +2,7 @@
   "mcpServers": {
     "ros2-inspector": {
       "command": "uv",
-      "args": ["run", "--directory", "/home/xuchen/XuChenCode/test", "ros2-inspector"]
+      "args": ["run", "--directory", "/home/xuchen/XuChenCode/test", "ros2-inspector-mcp"]
     }
   }
 }

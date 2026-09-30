@@ -28,7 +28,7 @@ async def main() -> None:
     desc = sys.argv[6] if len(sys.argv) > 6 else "远端测试目标"
 
     params = StdioServerParameters(
-        command="uv", args=["run", "--directory", str(ROOT), "ros2-inspector"]
+        command="uv", args=["run", "--directory", str(ROOT), "ros2-inspector-mcp"]
     )
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:

@@ -20,7 +20,7 @@ async def main() -> None:
     topic = sys.argv[1] if len(sys.argv) > 1 else "/chatter"
     params = StdioServerParameters(
         command="uv",
-        args=["run", "--directory", str(ROOT), "ros2-inspector"],
+        args=["run", "--directory", str(ROOT), "ros2-inspector-mcp"],
     )
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
