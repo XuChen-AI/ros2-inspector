@@ -9,78 +9,31 @@
 ![MCP](https://img.shields.io/badge/MCP-stdio-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**ros2-inspector 让大模型自动分析你的 ROS2 系统运行状态。** 它是一个 MCP Server：你用自然语言问"系统现在怎么样"，大模型自动决定执行哪些 ros2 查看命令、按什么顺序查、怎么把多个命令的输出拼成完整的分析结论。
+**让 AI 直接查看你的 ROS2 系统。** 这是一个 MCP Server：用自然语言问"系统现在怎么样"，AI 自动执行合适的只读查看命令、组合分析、给出结论。本机、ssh 远端板子、docker 容器里的 ROS 都能查。
 
 ```
-┌────────────────────────────────────────────┐
-│        MCP 宿主（Claude Code / ZCode /      │
-│        Qoder / Cursor / Claude Desktop）    │
-│                    │ MCP 协议 (stdio)       │
-└────────────────────┼───────────────────────┘
-                     ▼
-        ┌─────────────────────────┐
-        │   ros2-inspector MCP    │
-        │  （纯 Python，零 ROS 依赖）│
-        │     四层安全围栏·只读      │
-        └────────────┬────────────┘
-                     │ subprocess（自动探测并注入 ROS 环境）
-                     ▼
-              ROS2 系统（DDS 网络）
+  MCP 宿主（Claude Code / Qoder / Cursor / Claude Desktop…）
+                      │ MCP 协议 (stdio)
+                      ▼
+          ros2-inspector MCP（纯 Python，零 ROS 依赖）
+                      │ 只读命令（本机直跑 / ssh 远端 / docker exec）
+                      ▼
+                ROS2 系统（DDS 网络）
 ```
 
-## Why ros2-inspector?
+## 解决什么问题
 
-想搞清楚"系统现在什么状态"，以前是这样的：
+- `ros2 node list` → `node info` → `topic info -v` → `topic echo` → `topic hz` → `param list`……排查一个问题要在十几个命令之间来回跳，命令多、参数杂、记不住；
+- 每一步的输出都要自己读、自己拼出"谁连着谁、数据正不正常"的结论；
+- ROS 经常装在无头板子、远程服务器或 docker 容器里，得先 ssh 上去才能敲命令。
 
-- `ros2 node list` → 看到一堆节点 → 挑一个 `ros2 node info` → 发现可疑话题 → `ros2 topic info -v` → `ros2 topic echo` → `ros2 topic hz` → `ros2 param list`……**在十几个命令之间来回跳转**；
-- 命令体系庞大、参数格式各异，**根本记不住**；
-- 每一步的输出都要**自己读、自己对着分析**，拼出"谁连着谁、数据正不正常"的结论。
+ros2-inspector 把整件事交给 AI：你说一句"看看板子上的机械臂在干什么"，它自动完成总览、下钻、验证、给结论。监测类工具直接返回语义判断（"稳定 10Hz" / "断续：2 次超过 2 秒的间隙"），而不是一屏原始数字。
 
-ros2-inspector 把这整件事交给大模型：**你说一句"分析一下当前系统的运行状态"，它自动完成"总览 → 发现可疑点 → 下钻查询 → 汇总结论"的全过程。** 命令的记忆和组合、输出的阅读和关联分析，都不再是你的负担。
+## 快速开始
 
-> **你**：分析一下当前 ROS2 系统的运行状态
->
-> **模型**：先调 `system_overview` 拿到全貌 → 注意到 `/inspector_demo/chatter` 订阅者为 0 → 调 `get_topic_info` 确认 → 调 `sample_topic`/`get_topic_rate` 验证数据本身正常 → 给出结论："系统有 1 个节点正常运行，话题数据 6.1Hz 正常发布，但没有任何订阅者——消息发出去没人收，检查下游节点是否启动。"
+前置：[uv](https://docs.astral.sh/uv/)（唯一依赖）；本机没装 ROS 也能跑。
 
-支撑这件事可靠运行的底层保障：
-
-- __只读，绝对安全__ → 四层安全围栏，不存在任何"发布消息 / 调服务 / 改参数 / 启动节点"的入口；
-- __零 ROS 依赖__ → Server 纯 Python、不 source 任何环境，没装 ROS 的机器也能跑（还能检测装没装、适不适合装）；
-- __永不阻塞__ → 流式命令全部限时采样，超时强杀并返回已捕获的部分输出；
-- __多发行版自适应__ → 运行时自动探测 `/opt/ros/*`，Humble/Jazzy/Lyrical 不用改配置；
-- __任何 MCP 宿主通用__ → Claude Code、ZCode、Qoder、Cursor、Claude Desktop。
-
----
-
-## 🎥 Examples in Action
-
-> 📌 *TODO：此处放一段演示 GIF（自然语言问答排查 ROS2 系统的录屏）*
-
-**例 1 —— 系统巡检**
-
-> **你**：现在 ROS 系统里跑着哪些节点？互相怎么连接的？
->
-> **模型**：（调用 `system_overview`）当前系统有 1 个节点 `/inspector_demo_talker`，它向 `/inspector_demo/chatter`（`std_msgs/msg/String`）发布消息，当前该话题订阅者数量为 0……
-
-**例 2 —— 数据内容与频率**
-
-> **你**：/inspector_demo/chatter 上数据长什么样？频率正常吗？
->
-> **模型**：（调用 `sample_topic` 采样 3 条 + `get_topic_rate` 统计 3 秒）内容是递增计数字符串 `hello 279`、`hello 280`……实测平均频率 6.1 Hz……
-
-**例 3 —— 没装 ROS 的机器**
-
-> **你**：这台机器能跑 ROS 吗？
->
-> **模型**：（调用 `machine_readiness`）Ubuntu 24.04，在官方支持矩阵内（Jazzy/Kilted/Lyrical）；16GB 内存、剩余磁盘 120GB，均满足；主机名可解析，网络接口正常。结论：适合安装。
-
----
-
-## 🛠 Quick Start
-
-**前置**：[uv](https://docs.astral.sh/uv/)（唯一必需）；本机有 ROS2 则查看类工具可用，没有也不影响启动。
-
-**1. 配置宿主** —— MCP 通用 JSON：
+在 MCP 宿主里添加（Claude Code / ZCode 放工作区 `.mcp.json`，Claude Desktop 放 `claude_desktop_config.json`，Qoder / Cursor 在设置界面粘贴同样的 JSON）：
 
 ```json
 {
@@ -93,107 +46,41 @@ ros2-inspector 把这整件事交给大模型：**你说一句"分析一下当�
 }
 ```
 
-无需安装步骤、无本地路径依赖：`uvx` 首次运行会自动从 [PyPI](https://pypi.org/project/ros2-inspector-mcp/) 拉取。需要可复现环境时钉版本：`"args": ["ros2-inspector-mcp@0.1.1"]`。
+然后直接开始提问：
 
-**也可装成常驻工具（可选）：**
+> "分析一下当前系统的运行状态" · "现在有哪些节点？" · "/joint_states 频率正常吗？" · "看看板子上的机械臂在干什么"
 
-```bash
-uv tool install ros2-inspector-mcp   # 安装
-ros2-inspector-mcp --version         # 查看版本
-uv tool upgrade ros2-inspector-mcp   # 升级
-uv tool uninstall ros2-inspector-mcp # 卸载
-```
+### 远程巡检（ssh / 容器）
 
-**从源码运行（开发模式）：**
+ROS 装在无头板子、远程服务器或容器里？直接在对话里说：
 
-```bash
-git clone https://github.com/XuChen-AI/ros2-inspector.git
-cd ros2-inspector && uv sync
-```
+> "帮我登记一台目标：192.168.1.50，用户 ubuntu，密码 xxx，实验室小车主机"
 
-```json
-{
-  "mcpServers": {
-    "ros2-inspector": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/ros2-inspector", "ros2-inspector"]
-    }
-  }
-}
-```
+AI 会先出登记预览、你确认后写入（`add_target`）；首次使用前它会试连并把身份卡（主机名 / 系统 / ROS 发行版 / 主机指纹）亮给你确认（`check_target`）；之后所有工具带 `target="目标名"` 即可巡检远端，不填就是本机。密码和密钥认证都支持，配置热生效、无需重启，换目标只是对话里说一句话。
 
-> 若宿主找不到 `uv`/`uvx`（PATH 受限的图形应用），把 `command` 改成绝对路径（如 `/home/你/.local/bin/uvx`）即可。
+## 工具清单（17 个，全部只读）
 
-| 宿主 | 配置位置 |
+| 工具 | 回答什么 |
 |------|---------|
-| ZCode / Claude Code | 工作区根目录 `.mcp.json`，或各自 MCP 设置界面 |
-| Claude Desktop | `claude_desktop_config.json` 的 `mcpServers` |
-| Qoder / Cursor | 设置 → MCP → 添加服务器，粘贴同样的 JSON |
+| `list_targets` | 有哪些可巡检目标（本机 + 已登记的远端/容器） |
+| `check_target` | 试连目标并返回身份卡 |
+| `add_target` / `remove_target` | 对话式登记 / 删除目标（预览确认后生效） |
+| `ros_install_info` | 目标机器装没装 ROS？哪个发行版？ |
+| `machine_readiness` | 目标机器适不适合装/跑 ROS？ |
+| `system_overview` | 一页快照：节点 + 话题 + 连接关系 |
+| `list_nodes` / `get_node_info` | 哪些节点在跑 / 某节点收发什么、连着谁 |
+| `list_topics` / `get_topic_info` | 有哪些话题、什么类型 / 收发者数与 QoS |
+| `sample_topic` | 话题数据内容（≤30s 采样 + 内容变化判定，识别"空转发常量"） |
+| `get_topic_rate` | 发布频率（≤30s 统计 + 结论：稳定 / 断续 / 波动） |
+| `params` | 节点参数列表 / 某参数当前值 |
+| `actions` | 动作列表 / 某动作详情 |
+| `show_interface` | 消息/服务/动作类型的字段定义 |
+| `health_check` | ROS 环境健康：daemon 状态 + doctor 结论 |
 
-**2. 开始提问**
+## 安全
 
-> "分析一下当前系统的运行状态" · "看看现在有哪些节点" · "/chatter 上数据长什么样" · "环境健康吗？"
+只读是设计出来的，不是约定出来的：四层围栏（只注册 17 个只读函数 / 动词白名单+黑名单令牌 / 参数格式校验拒绝注入字符 / 超时强杀 + 审计日志），任何"发布消息 / 调服务 / 改参数 / 启动节点"的代码不存在。远端命令自动限时防孤儿进程。目标登记同样四道围栏：填表式参数、逐字段校验、两步预览确认、统一序列化落盘。配置文件在 `~/.config/ros2-inspector/targets.json`（`--targets` 可改），升级卸载都不影响它。
 
-**（可选）自测**：想先本地验证一遍，见仓库 `tests/` 目录（安全围栏测试 + 端到端冒烟 + 测试用发布者脚本）。
+## License
 
----
-
-## 📦 工具清单（13 个，全部只读）
-
-| 工具 | 需要 ROS？ | 回答什么 |
-|------|-----------|---------|
-| `ros_install_info` | 否 | 本机装没装 ROS？哪个发行版、什么路径？ |
-| `machine_readiness` | 否 | 机器适不适合装/跑 ROS（OS/内存/磁盘/网络对照支持矩阵） |
-| `system_overview` | 是 | 一页快照：节点 + 话题 + 连接关系 + 数量统计 |
-| `list_nodes` / `get_node_info` | 是 | 哪些节点在跑 / 某节点收发什么、连着谁 |
-| `list_topics` / `get_topic_info` | 是 | 有哪些话题、什么类型 / 类型、收发者数、QoS |
-| `sample_topic` / `get_topic_rate` | 是 | 话题数据内容（限时采样）/ 发布频率（限时统计） |
-| `params` | 是 | 节点参数列表 / 某参数当前值 |
-| `actions` | 是 | 动作列表 / 某动作详情 |
-| `show_interface` | 是 | 消息/服务/动作类型的字段定义 |
-| `health_check` | 是 | 环境健康：daemon 状态 + doctor 体检结论 |
-
-**协议原语**：只实现 Tools（所有宿主通用）。有意不做 Resources（数据是实时动态查询，Tool 才是正确语义）与 Prompts（分析套路已写进工具描述，v1.5 再评估）。
-
----
-
-## 🔒 安全设计
-
-只读是设计出来的，不是约定出来的。四层纵深防御，集中在统一执行器 `runner.py`：
-
-1. **注册层**：只注册 13 个只读函数，写操作的代码不存在；
-2. **白名单层**：子命令精确到"动词+子动词"13 组；黑名单令牌（`pub`/`call`/`set`/`launch`/`run`/`pkg`…）兜底；
-3. **校验层**：参数只放行标志位/ROS 名称/接口类型/数字等白名单格式，`;` `|` `&` `` ` `` `$` 一律拒绝，全程 `shell=False`；
-4. **兜底层**：超时 + 进程组强杀；每次调用写审计日志（`audit.log`）。
-
----
-
-## ❓ 故障排查
-
-| 现象 | 处理 |
-|------|------|
-| 工具说"未检测到 ROS2 环境" | `ros_install_info` 确认安装；确认 `/opt/ros/<发行版>/setup.bash` 存在 |
-| `list_nodes` 为空但机器人在跑 | 两边 `ROS_DOMAIN_ID` 是否一致；daemon 缓存过期就 `ros2 daemon stop && ros2 daemon start` |
-| `sample_topic` 返回无消息 | 话题可能没有发布者；先用 `get_topic_info` 看发布者数量 |
-| 报话题/节点不存在 | 名称需 `/` 开头、大小写敏感；先 `list_topics`/`list_nodes` 确认确切名称 |
-| `health_check` 提示不完整 | doctor 含网络检查最长约 30 秒，慢网络下结论可能被截断 |
-
----
-
-## 🗺 Roadmap
-
-- [ ] v1.5：Prompts 诊断模板（一键系统体检）；`service list/type` 只读查询
-- [x] v2：PyPI 发布 —— `uvx ros2-inspector-mcp` 路径无关一条命令可用
-- [ ] v2：Docker 封装（宿主机零依赖）
-
----
-
-## 🤝 Contributing
-
-欢迎 issue 与 PR：新工具建议（保持只读）、宿主配置反馈、文档改进。
-
----
-
-## 📜 License
-
-[MIT](LICENSE) — Copyright (c) 2026 XuChen
+[MIT](LICENSE)

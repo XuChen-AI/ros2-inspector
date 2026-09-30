@@ -31,7 +31,7 @@ async def main() -> None:
             print(f"注册工具数: {len(names)}")
             for name in names:
                 print(f"  - {name}")
-            assert len(names) == 13, f"工具数量应为 13，实际 {len(names)}: {names}"
+            assert len(names) == 17, f"工具数量应为 17，实际 {len(names)}: {names}"
 
             async def call(name: str, args: dict | None = None):
                 res = await session.call_tool(name, args or {})
@@ -66,7 +66,16 @@ async def main() -> None:
             res = await call("actions", {"action_name": "/a", "show_types": True})  # 正常放行
             assert not res.isError, "非法以外的正常调用不应报错"
 
-            print("\n✅ 冒烟通过：协议层 + 13 工具 + 安全围栏 全链路 OK")
+            # 目标管理：列目标（不连接）+ 增删两步预览（不落盘）
+            await call("list_targets")
+            await call("add_target", {
+                "name": "smoke-preview", "description": "冒烟预览用",
+                "host": "192.0.2.1", "username": "ubuntu",
+                "auth_method": "password", "password": "x",
+            })
+            await call("remove_target", {"name": "smoke-preview"})
+
+            print("\n✅ 冒烟通过：协议层 + 17 工具 + 安全围栏 + 目标管理预览 全链路 OK")
 
 
 if __name__ == "__main__":
