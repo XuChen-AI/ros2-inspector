@@ -1,6 +1,6 @@
 [project]
 name = "ros2-inspector-mcp"
-version = "0.3.0"
+version = "0.3.1"
 description = "Read-only MCP server that lets LLMs inspect and analyze ROS 2 systems (nodes, topics, params, actions) via natural language"
 readme = "README.md"
 requires-python = ">=3.10"

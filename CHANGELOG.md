@@ -5,6 +5,12 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.3.1] - 2026-10-01
+
+### Fixed
+
+- `sample_topic` / `get_topic_rate` 在 ros2 daemon 与 Python 3.14 存在 XML-RPC 兼容性问题的机器上（如 Ubuntu 26.04 + lyrical：echo 启动时向 daemon 查发布者 QoS，`unknown tag 'rclpy.topic_endpoint_info.TopicEndpointInfo'` 崩溃）自动改用 `--no-daemon` 直连重试。此前该兜底只覆盖普通命令，流式命令是盲区；兜底成功时 note 注明，两条路径均失败时错误提示如实区分"daemon 兼容性问题"与"话题无发布者"。健康系统零开销（快速失败才触发重试）。
+
 ## [0.3.0] - 2026-09-30
 
 ### Removed
@@ -60,7 +66,8 @@
 - `--version` 命令行参数。
 - 中英双语 README、MIT License、uv 项目配置。
 
-[Unreleased]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/XuChen-AI/ros2-inspector/compare/v0.1.0...v0.1.1

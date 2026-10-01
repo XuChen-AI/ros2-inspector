@@ -507,6 +507,43 @@ def run_ros2_daemon_fallback(
     return res, False, True
 
 
+def _stream_fast_failed(res: StreamResult) -> bool:
+    """流式命令"快速失败"判定：窗口没耗尽就退出、零消息、带异常痕迹。
+
+    典型场景：echo 启动时经 daemon 查发布者 QoS，daemon 与目标 Python 版本
+    不兼容（如 Python 3.14 的 xmlrpc 拒绝自定义标签）会在订阅开始前崩溃；
+    窗口正常耗尽（timed_out）或已收到消息的，不属于失败，不触发重试。
+    """
+    if res.timed_out or res.hit_message_limit or res.message_count > 0:
+        return False
+    return "Traceback (most recent call last)" in res.text or res.returncode not in (0, None)
+
+
+def stream_ros2_daemon_fallback(
+    args: list[str],
+    duration_s: float,
+    max_messages: int | None = None,
+    target: str = "local",
+) -> tuple[StreamResult, bool, bool]:
+    """stream_ros2 + daemon 失效兜底：快速失败时以 --no-daemon 直连重试一次。
+
+    返回 (结果, 是否采用了兜底结果, 是否尝试过兜底)。
+    正常采样（到窗口结束或抓满条数）不重试，健康系统零开销。
+    """
+    res = stream_ros2(
+        args, duration_s=duration_s, max_messages=max_messages, target=target
+    )
+    if not _stream_fast_failed(res):
+        return res, False, False
+    retry = stream_ros2(
+        [*args, "--no-daemon"], duration_s=duration_s,
+        max_messages=max_messages, target=target,
+    )
+    if not _stream_fast_failed(retry):
+        return retry, True, True
+    return res, False, True
+
+
 def run_probe(cfg: TargetConfig, snippet: str, timeout: float = 15.0) -> tuple[int | None, str, str]:
     """在目标上执行**代码内固定**的探测 snippet（体检/身份卡用，不经过 ros2 围栏）。
 

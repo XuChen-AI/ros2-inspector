@@ -207,11 +207,36 @@ def test_rate_verdict() -> None:
     ok("无数据 → 明确说明")
 
 
+def test_stream_fast_failed() -> None:
+    print("== runner：流式快速失败判定 ==")
+    from ros2_inspector.runner import StreamResult, _stream_fast_failed
+
+    def mk(**kw):
+        base = dict(
+            args=["topic", "echo", "/x"], text="", message_count=0,
+            timed_out=False, hit_message_limit=False, returncode=None,
+        )
+        base.update(kw)
+        return StreamResult(**base)
+
+    assert _stream_fast_failed(mk(text="Traceback (most recent call last)\n...", returncode=1))
+    ok("快速退出带 traceback → 判定失败（echo 崩溃场景）")
+    assert _stream_fast_failed(mk(returncode=1))
+    ok("非零退出码且零消息 → 判定失败")
+    assert not _stream_fast_failed(mk(timed_out=True))
+    ok("窗口正常耗尽 → 不重试（健康采样）")
+    assert not _stream_fast_failed(mk(message_count=3, hit_message_limit=True, text="---"))
+    ok("已收到消息 → 不重试")
+    assert not _stream_fast_failed(mk(returncode=0))
+    ok("干净退出零消息 → 不重试（静默话题）")
+
+
 def main() -> None:
     test_build_target()
     test_file_roundtrip_and_hot_reload()
     test_snippets()
     test_rate_verdict()
+    test_stream_fast_failed()
     test_registration()
     print(f"\n✅ v0.2 单元测试全部通过（{PASS} 项）")
 

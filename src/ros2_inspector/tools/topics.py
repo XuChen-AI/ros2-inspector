@@ -71,20 +71,29 @@ def register(mcp) -> None:
         """
         max_messages = max(1, min(int(max_messages), 50))
         timeout_s = min(max(float(timeout_s), 1.0), 30.0)
-        res = runner.stream_ros2(
+        res, via_fallback, _tried = runner.stream_ros2_daemon_fallback(
             ["topic", "echo", topic], duration_s=timeout_s,
             max_messages=max_messages, target=target,
         )
         raw = res.text.strip()
         if "Traceback (most recent call last)" in raw:
+            if "unknown tag" in raw:
+                error = (
+                    "目标机器的 ros2 daemon 与其 Python 版本存在 XML-RPC 兼容性问题"
+                    "（已知 Ubuntu 26.04/lyrical 的 Python 3.14 会触发），"
+                    "自动 --no-daemon 绕过也未成功。可在目标终端手动执行 "
+                    "`ros2 topic echo <话题> --no-daemon` 对照确认"
+                )
+            else:
+                error = (
+                    "echo 在目标机器上抛异常退出。常见原因：话题没有发布者，"
+                    "CLI 无法推断消息类型；或类型定义缺失。"
+                    "可先 get_topic_info 看发布者数量，或换 list_topics 里的活跃话题"
+                )
             return {
                 "target": target,
                 "topic": topic,
-                "error": (
-                    "echo 在目标机器上抛异常退出。最常见原因：话题没有发布者，"
-                    "CLI 无法推断消息类型；或类型定义缺失。"
-                    "可先 get_topic_info 看发布者数量，或换 list_topics 里的活跃话题"
-                ),
+                "error": error,
                 "cli_tail": "\n".join(raw.splitlines()[-3:])[:500],
             }
         if res.returncode not in (0, None) and not raw:
@@ -104,7 +113,9 @@ def register(mcp) -> None:
         else:
             stopped = "publisher_stopped"
         note = None
-        if not raw:
+        if via_fallback and raw:
+            note = "daemon 路径失败，已自动改用 --no-daemon 直连采样（目标 daemon 存在兼容性问题）"
+        elif not raw:
             note = "采样窗口内未收到任何消息——话题可能没有发布者或频率极低"
         elif not content_changed:
             note = "窗口内所有消息内容完全相同——节点可能在空转（发送常量/未更新数据）"
@@ -130,7 +141,9 @@ def register(mcp) -> None:
         如"稳定 ~10Hz"/"断续：2 次超 2s 间隙"/"窗口内无数据"）。
         """
         duration_s = min(max(float(duration_s), 1.0), 30.0)
-        res = runner.stream_ros2(["topic", "hz", topic], duration_s=duration_s, target=target)
+        res, via_fallback, _tried = runner.stream_ros2_daemon_fallback(
+            ["topic", "hz", topic], duration_s=duration_s, target=target
+        )
         rates = [float(v) for v in _AVERAGE_RATE_RE.findall(res.text)]
         out: dict = {
             "target": target,
@@ -145,6 +158,8 @@ def register(mcp) -> None:
         }
         out["verdict"] = _rate_verdict(rates, res.gap_count, res.max_gap_s)
         out["raw_tail"] = "\n".join(res.text.strip().splitlines()[-8:])
+        if via_fallback and rates:
+            out["note"] = "daemon 路径失败，已自动改用 --no-daemon 直连统计（目标 daemon 存在兼容性问题）"
         return out
 
 
